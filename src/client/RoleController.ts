@@ -18,8 +18,7 @@ export class RoleController
 	{
 		this.client = client;
 		this.categoryRegex = new RegExp(`^${category}:`);
-		// Change to 1/10m before going live
-		this.rateLimiter = new RateLimiter('1/30s', false);
+		this.rateLimiter = new RateLimiter('1/10m', false);
 
 		this.channel = channel;
 		this.message = message;
