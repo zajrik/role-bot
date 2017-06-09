@@ -170,6 +170,8 @@ export class RoleControllerManager
 		for (const [index, role] of roles.array().entries())
 			await message.react(Util.numberEmoji[index + 1]);
 
+		await message.react('❌');
+
 		await this.storage.set(`${channel.guild.id}.${channel.id}.${message.id}`, category);
 		const controller: RoleController = new RoleController(this.client, channel, message, category);
 		this.controllers.get(channel.id).set(message.id, controller);
@@ -191,5 +193,7 @@ export class RoleControllerManager
 		const editedMessage: Message = <Message> await message.edit({ embed });
 		for (const [index, role] of roles.array().entries())
 			await editedMessage.react(Util.numberEmoji[index + 1]);
+
+		await message.react('❌');
 	}
 }
