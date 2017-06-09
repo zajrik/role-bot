@@ -1,3 +1,4 @@
+import { RoleController } from '../client/RoleController';
 import { RoleClient } from '../client/RoleClient';
 import { Message, TextChannel } from 'discord.js';
 import { Command, CommandDecorators, Middleware } from 'yamdbf';
@@ -19,6 +20,16 @@ export default class extends Command<RoleClient>
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();
+		if (this.client.roleManager.controllerExists(message.guild, category))
+		{
+			const controller: RoleController = this.client.roleManager.getController(message.guild, category);
+			const output: string = controller.channel.id !== message.channel.id ?
+				`**A role controller for that category already exists in ${controller.channel}.**`
+				: `**A role controller for that category already exists.**`;
+
+			return message.channel.send(output).then((m: Message) => m.delete(10e3));
+		}
+
 		await this.client.roleManager.create(<TextChannel> message.channel, category);
 	}
 }

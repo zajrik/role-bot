@@ -22,7 +22,7 @@ export default class extends Command<RoleClient>
 		await message.delete();
 		const controller: RoleController = this.client.roleManager.getController(message.guild, category);
 		if (!controller) return message.channel
-			.send('Failed to find a role controller for that category.')
+			.send('**Failed to find a role controller for that category.**')
 			.then((m: Message) => m.delete(10e3));
 
 		await this.client.roleManager.update(controller.message, category);
