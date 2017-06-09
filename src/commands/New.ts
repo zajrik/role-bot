@@ -20,6 +20,9 @@ export default class extends Command<RoleClient>
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();
+		if (!(<TextChannel> message.channel).permissionsFor(message.author).has('SEND_MESSAGES'))
+			return message.author.send(`I can't create messages in that channel.`);
+
 		if (this.client.roleManager.controllerExists(message.guild, category))
 		{
 			const controller: RoleController = this.client.roleManager.getController(message.guild, category);
