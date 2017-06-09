@@ -1,6 +1,7 @@
 import { RoleClient } from '../client/RoleClient';
 import { Message, TextChannel } from 'discord.js';
-import { Command } from 'yamdbf';
+import { Command, CommandDecorators, Middleware } from 'yamdbf';
+const { using } = CommandDecorators;
 
 export default class extends Command<RoleClient>
 {
@@ -14,6 +15,7 @@ export default class extends Command<RoleClient>
 		});
 	}
 
+	@using(Middleware.expect({ '<category>': 'String' }))
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();
