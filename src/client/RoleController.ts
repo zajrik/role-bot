@@ -34,15 +34,22 @@ export class RoleController
 		if (user.id === this.client.user.id) return;
 		reaction.remove(user);
 		if (user.bot) return reaction.remove(user);
-		if (!this.rateLimiter.get(reaction.message, user).call()) return reaction.remove(user);
 
 		const index: number = Util.numberEmoji.findIndex(e => e === reaction.emoji.name);
+		if (typeof index !== 'number' || !(index < 10 && index > 0)) return reaction.remove(user);
+
 		const roles: Collection<string, Role> = reaction.message.guild.roles
 			.filter(role => this.categoryRegex.test(role.name));
+		const role: Role = roles.array()[index - 1];
+		if (!role) return reaction.remove(user);
+
 		const member: GuildMember = await reaction.message.guild.fetchMember(user);
-		const memberRoles: Collection<string, Role> = member.roles.filter(role => this.categoryRegex.test(role.name));
+		const memberRoles: Collection<string, Role> = member.roles.filter(r => this.categoryRegex.test(r.name));
+		if (member.roles.has(role.id)) return reaction.remove(user);
+		if (!this.rateLimiter.get(reaction.message, user).call()) return reaction.remove(user);
+
 		if (memberRoles.size > 0) await member.removeRoles(memberRoles);
-		await member.addRole(roles.array()[index - 1]);
+		await member.addRole(role);
 		await reaction.remove(user);
 	}
 }
