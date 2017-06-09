@@ -87,6 +87,22 @@ export class RoleControllerManager
 	}
 
 	/**
+	 * Determine if a role controller's message interface was removed and
+	 * remove the stored controller connection if so
+	 */
+	@on('messageDelete')
+	private async _onMessageDelete(message: Message): Promise<void>
+	{
+		const controllerPath: string = `${message.guild.id}.${message.channel.id}.${message.id}`;
+		if (await this.storage.exists(controllerPath))
+		{
+			await this.storage.remove(controllerPath);
+			if (this.controllers.has(message.channel.id))
+				this.controllers.get(message.channel.id).delete(message.id);
+		}
+	}
+
+	/**
 	 * Get a RoleController for the given category in a guild
 	 */
 	public getController(guild: Guild, category: string): RoleController
