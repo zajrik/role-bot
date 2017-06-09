@@ -19,10 +19,18 @@ export class RoleClient extends Client
 			commandsDir: './bin/commands',
 			disableBase: Util.baseCommandNames
 				.filter(name => name !== 'eval'),
-			logLevel: LogLevel.DEBUG
+			pause: true,
+			logLevel: LogLevel.INFO
 		});
 
 		this.roleManager = new RoleControllerManager(this);
+	}
+
+	@once('pause')
+	private async _onPause(): Promise<void>
+	{
+		await this.setDefaultSetting('prefix', '+');
+		this.emit('continue');
 	}
 
 	@once('clientReady')
