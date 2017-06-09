@@ -1,4 +1,4 @@
-import { Client, LogLevel, Util, ListenerUtil } from 'yamdbf';
+import { Client, ListenerUtil, LogLevel, Util } from 'yamdbf';
 import { RoleControllerManager } from './RoleControllerManager';
 const { token, owner } = require('../config.json');
 const pkg: any = require('../../package.json');

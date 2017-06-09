@@ -1,4 +1,4 @@
-import { TextChannel, Message, Collection, Role, User, MessageReaction, GuildMember } from 'discord.js';
+import { Collection, GuildMember, Message, MessageReaction, Role, TextChannel, User } from 'discord.js';
 import { RateLimiter } from 'yamdbf';
 import { RoleClient } from './RoleClient';
 import { Util } from './Util';

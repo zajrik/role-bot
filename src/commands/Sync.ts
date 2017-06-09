@@ -1,7 +1,7 @@
-import { RoleController } from '../client/RoleController';
 import { RoleClient } from '../client/RoleClient';
+import { RoleController } from '../client/RoleController';
 import { Message } from 'discord.js';
-import { Command, Middleware, CommandDecorators } from 'yamdbf';
+import { Command, CommandDecorators, Middleware } from 'yamdbf';
 const { using } = CommandDecorators;
 
 export default class extends Command<RoleClient>

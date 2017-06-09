@@ -1,4 +1,4 @@
-import { Guild, TextChannel, User, MessageReaction, Collection, Message, Role, RichEmbed } from 'discord.js';
+import { Collection, Guild, Message, MessageReaction, RichEmbed, Role, TextChannel, User } from 'discord.js';
 import { KeyedStorage, ListenerUtil } from 'yamdbf';
 import { RoleController } from './RoleController';
 import { RoleClient } from './RoleClient';
