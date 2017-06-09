@@ -1,6 +1,6 @@
 import { RoleController } from '../client/RoleController';
 import { RoleClient } from '../client/RoleClient';
-import { Message, TextChannel } from 'discord.js';
+import { Message } from 'discord.js';
 import { Command, Middleware, CommandDecorators } from 'yamdbf';
 const { using } = CommandDecorators;
 
