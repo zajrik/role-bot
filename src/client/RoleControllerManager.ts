@@ -103,7 +103,7 @@ export class RoleControllerManager
 			(typeof secondaryRole === 'string' ? role : secondaryRole).name.match(categoryRegex)[1];
 
 		if (this.controllerExists(role.guild, category))
-			this.update(this.getController(role.guild, category).message, category);
+			this.sync(this.getController(role.guild, category));
 	}
 
 	/**
@@ -123,7 +123,7 @@ export class RoleControllerManager
 	}
 
 	/**
-	 * Get a RoleController for the given category in a guild
+	 * Get a RoleController in the given Guild for the given category
 	 */
 	public getController(guild: Guild, category: string): RoleController
 	{
@@ -145,7 +145,7 @@ export class RoleControllerManager
 	}
 
 	/**
-	 * See if a RoleController exists for the given category
+	 * See if a RoleController exists in the given Guild for the given category
 	 */
 	public controllerExists(guild: Guild, category: string): boolean
 	{
@@ -153,7 +153,7 @@ export class RoleControllerManager
 	}
 
 	/**
-	 * Return all roles associated with this Controller's category
+	 * Return all Roles in the given Guild associated with the given category
 	 */
 	public getCategoryRoles(guild: Guild, category: string): Collection<string, Role>
 	{
@@ -163,14 +163,14 @@ export class RoleControllerManager
 
 	/**
 	 * Create an embed for the category to serve as the visual representation
-	 * of the controller within a channel
+	 * of the controller within the given TextChannel
 	 */
 	public createControllerEmbed(channel: TextChannel, category: string): RichEmbed
 	{
 		let desc: string = [
 			'Choose a role number to be assigned that role.\n',
 			'You may only choose one role from this category at a time ',
-			'and may only change roles once every 10 minutes\n\n```ldif\n'
+			'and may only change roles once every 10 minutes.\n\n```ldif\n'
 		].join('\n');
 
 		const embed: RichEmbed = new RichEmbed()
@@ -187,18 +187,20 @@ export class RoleControllerManager
 	}
 
 	/**
-	 * Create a RoleController and add it to the `controllers` collection for the channel
+	 * Create a RoleController and add it to the `controllers`
+	 * collection for the given TextChannel
 	 */
 	public async create(channel: TextChannel, category: string): Promise<RoleController>
 	{
+		// Create a controller collection for the channel if it doesn't exist
 		if (!this.controllers.has(channel.id))
 			this.controllers.set(channel.id, new Collection<string, RoleController>());
 
 		if (this.controllerExists(channel.guild, category)) return this.getController(channel.guild, category);
 
+		let count: number = 0;
 		const embed: RichEmbed = this.createControllerEmbed(channel, category);
 		const message: Message = <Message> await channel.send({ embed });
-		let count: number = 0;
 		const roles: Collection<string, Role> = this.getCategoryRoles(channel.guild, category)
 			.filter(role => count++ <= 9);
 
@@ -215,10 +217,12 @@ export class RoleControllerManager
 	}
 
 	/**
-	 * Update a RoleController's embed for new roles and re-add reaction buttons
+	 * Sync a RoleController's embed with its category
+	 * Roles and re-add reaction buttons
 	 */
-	public async update(message: Message, category: string): Promise<void>
+	public async sync(controller: RoleController): Promise<void>
 	{
+		const { category, message } = controller;
 		const embed: RichEmbed = this.createControllerEmbed(<TextChannel> message.channel, category);
 		await message.clearReactions();
 		let count: number = 0;

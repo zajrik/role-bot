@@ -25,6 +25,6 @@ export default class extends Command<RoleClient>
 			.send('**Failed to find a role controller for that category.**')
 			.then((m: Message) => m.delete(10e3));
 
-		await this.client.roleManager.update(controller.message, category);
+		await this.client.roleManager.sync(controller);
 	}
 }
