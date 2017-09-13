@@ -10,13 +10,13 @@ export default class extends Command<RoleClient>
 	{
 		super({
 			name: 'sync',
-			description: 'Resync the controller for an active category',
+			desc: 'Resync the controller for an active category',
 			usage: '<prefix>sync <category>',
 			callerPermissions: ['ADMINISTRATOR']
 		});
 	}
 
-	@using(Middleware.expect({ '<category>': 'String' }))
+	@using(Middleware.expect('category: String'))
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();

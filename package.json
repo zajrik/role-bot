@@ -27,13 +27,13 @@
     "yamdbf": "github:zajrik/yamdbf"
   },
   "devDependencies": {
-    "@types/node": "^6.0.73",
+    "@types/node": "^6.0.88",
     "del": "^2.2.2",
     "gulp": "^3.9.1",
-    "gulp-sourcemaps": "^2.4.0",
-    "gulp-tslint": "^8.0.0",
-    "gulp-typescript": "^3.1.6",
-    "tslint": "^5.4.3",
-    "typescript": "^2.3.4"
+    "gulp-sourcemaps": "^2.6.1",
+    "gulp-tslint": "^8.1.2",
+    "gulp-typescript": "^3.2.2",
+    "tslint": "^5.7.0",
+    "typescript": "^2.5.2"
   }
 }

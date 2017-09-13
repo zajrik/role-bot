@@ -1,5 +1,5 @@
 import { Collection, Guild, Message, MessageReaction, RichEmbed, Role, TextChannel, User } from 'discord.js';
-import { KeyedStorage, ListenerUtil } from 'yamdbf';
+import { KeyedStorage, ListenerUtil, Logger, logger, Time } from 'yamdbf';
 import { RoleController } from './RoleController';
 import { RoleClient } from './RoleClient';
 import { Util } from './Util';
@@ -10,13 +10,19 @@ const { on, registerListeners } = ListenerUtil;
  */
 export class RoleControllerManager
 {
+	@logger('RoleControllerManager')
+	private readonly logger: Logger;
+
 	private client: RoleClient;
 	private storage: KeyedStorage;
+
+	/** Maps TextChannel IDs to Collections of <MessageID, RoleController> */
 	private controllers: Collection<string, Collection<string, RoleController>>;
+
 	public constructor(client: RoleClient)
 	{
 		this.client = client;
-		this.storage = new KeyedStorage('manager/role_controllers', this.client.provider);
+		this.storage = new KeyedStorage('role_controllers', this.client.provider);
 		this.controllers = new Collection<string, Collection<string, RoleController>>();
 		registerListeners(this.client, this);
 	}
@@ -38,11 +44,24 @@ export class RoleControllerManager
 
 					let message: Message;
 					try { message = await channel.fetchMessage(messageID); }
-					catch (err) { return await this.storage.remove(`${guildID}.${channelID}.${messageID}`); }
+					catch
+					{
+						await this.storage.remove(`${guildID}.${channelID}.${messageID}`);
+						continue;
+					}
 
-					this.controllers.get(channelID).set(message.id, new RoleController(this.client, channel, message, category));
+					this.controllers.get(channelID).set(message.id,
+						new RoleController(this.client, channel, message, category));
 				}
 			}
+
+		this.client.setInterval(async () => {
+			for (const collection of this.controllers.values())
+				for (const controller of collection.values())
+					try { await controller.channel.fetchMessage(controller.message.id); }
+					catch { this.logger.error(`Failed to fetch controller message: ${controller.message.id}`); }
+		}, Time.parseShorthand('6h'));
+		this.logger.log('Initialized.');
 	}
 
 	/**
@@ -82,6 +101,7 @@ export class RoleControllerManager
 
 		const category: string =
 			(typeof secondaryRole === 'string' ? role : secondaryRole).name.match(categoryRegex)[1];
+
 		if (this.controllerExists(role.guild, category))
 			this.update(this.getController(role.guild, category).message, category);
 	}
@@ -119,7 +139,7 @@ export class RoleControllerManager
 						break;
 					}
 			}
-			else break;
+			else continue;
 		}
 		return fetchedController;
 	}
@@ -183,8 +203,8 @@ export class RoleControllerManager
 			.filter(role => count++ <= 9);
 
 		if (roles.size === 0) return null;
-		for (const [index, role] of roles.array().entries())
-			await message.react(Util.numberEmoji[index + 1]);
+		for (let i: number = 0; i < roles.size; i++)
+			await message.react(Util.numberEmoji[i + 1]);
 
 		await message.react('❌');
 
@@ -207,8 +227,8 @@ export class RoleControllerManager
 
 		if (roles.size === 0) embed.setDescription('This category has had all of its roles removed.');
 		const editedMessage: Message = <Message> await message.edit({ embed });
-		for (const [index, role] of roles.array().entries())
-			await editedMessage.react(Util.numberEmoji[index + 1]);
+		for (let i: number = 0; i < roles.size; i++)
+			await editedMessage.react(Util.numberEmoji[i + 1]);
 
 		await message.react('❌');
 	}

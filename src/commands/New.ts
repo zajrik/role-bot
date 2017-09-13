@@ -10,13 +10,13 @@ export default class extends Command<RoleClient>
 	{
 		super({
 			name: 'new',
-			description: 'Create a new role controller for a category',
+			desc: 'Create a new role controller for a category',
 			usage: '<prefix>new <category>',
 			callerPermissions: ['ADMINISTRATOR']
 		});
 	}
 
-	@using(Middleware.expect({ '<category>': 'String' }))
+	@using(Middleware.expect('category: String'))
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();
@@ -26,8 +26,8 @@ export default class extends Command<RoleClient>
 		if (this.client.roleManager.controllerExists(message.guild, category))
 		{
 			const controller: RoleController = this.client.roleManager.getController(message.guild, category);
-			const output: string = controller.channel.id !== message.channel.id ?
-				`**A role controller for that category already exists in ${controller.channel}.**`
+			const output: string = controller.channel.id !== message.channel.id
+				? `**A role controller for that category already exists in ${controller.channel}.**`
 				: `**A role controller for that category already exists.**`;
 
 			return message.channel.send(output).then((m: Message) => m.delete(10e3));

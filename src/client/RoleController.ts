@@ -14,6 +14,7 @@ export class RoleController
 	public channel: TextChannel;
 	public message: Message;
 	public category: string;
+
 	public constructor(client: RoleClient, channel: TextChannel, message: Message, category: string)
 	{
 		this.client = client;
@@ -46,7 +47,8 @@ export class RoleController
 		if (typeof index !== 'number' || !(index < 10 && index > 0)) return reaction.remove(user);
 
 		const roles: Collection<string, Role> = reaction.message.guild.roles
-			.filter(role => this.categoryRegex.test(role.name));
+			.filter(r => this.categoryRegex.test(r.name));
+
 		const role: Role = roles.array()[index - 1];
 		if (!role) return reaction.remove(user);
 

@@ -18,7 +18,7 @@
 		"triple-equals": true,
 		"eofline": true,
 		"no-bitwise": false,
-		"no-console": [false],
+		"no-console": [true],
 		// "member-ordering": [
 		// 	true, { "order": [
         //       "protected-static-field",
@@ -59,12 +59,13 @@
 			"check-typecast"
 		],
 		"typedef": [
+			true,
 			"parameter",
 			// "arrow-parameter",
-			// "call-signature",
+			"call-signature",
 			"member-variable-declaration",
-			"property-declaration"
-			// "variable-declaration"
+			"property-declaration",
+			"variable-declaration"
 		],
 		"typedef-whitespace": [
 			true,
