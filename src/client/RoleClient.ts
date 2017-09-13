@@ -18,7 +18,7 @@ export class RoleClient extends Client
 			disableBase: Util.baseCommandNames
 				.filter(name => name !== 'eval'),
 			pause: true,
-			logLevel: LogLevel.INFO
+			logLevel: LogLevel.DEBUG
 		});
 
 		this.roleManager = new RoleControllerManager(this);
