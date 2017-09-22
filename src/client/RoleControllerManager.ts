@@ -1,5 +1,5 @@
 import { Collection, Guild, Message, MessageReaction, RichEmbed, Role, TextChannel, User } from 'discord.js';
-import { KeyedStorage, ListenerUtil, Logger, logger, Time } from 'yamdbf';
+import { KeyedStorage, ListenerUtil, Logger, logger } from 'yamdbf';
 import { RoleController } from './RoleController';
 import { RoleClient } from './RoleClient';
 import { Util } from './Util';
@@ -12,7 +12,6 @@ export class RoleControllerManager
 {
 	@logger('RoleControllerManager')
 	private readonly logger: Logger;
-
 	private client: RoleClient;
 	private storage: KeyedStorage;
 
@@ -55,19 +54,13 @@ export class RoleControllerManager
 				}
 			}
 
-		this.client.setInterval(async () => {
-			for (const collection of this.controllers.values())
-				for (const controller of collection.values())
-					try { await controller.channel.fetchMessage(controller.message.id); }
-					catch { this.logger.error(`Failed to fetch controller message: ${controller.message.id}`); }
-		}, Time.parseShorthand('6h'));
 		this.logger.log('Initialized.');
 	}
 
 	/**
 	 * Pass reactions (button presses) to the associated controller
 	 */
-	@on('messageReactionAdd')
+	@on('reaction')
 	private async _onReaction(reaction: MessageReaction, user: User): Promise<void>
 	{
 		const channel: string = reaction.message.channel.id;

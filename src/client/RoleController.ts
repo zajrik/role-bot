@@ -11,6 +11,7 @@ export class RoleController
 	private client: RoleClient;
 	private categoryRegex: RegExp;
 	private rateLimiter: RateLimiter;
+
 	public channel: TextChannel;
 	public message: Message;
 	public category: string;

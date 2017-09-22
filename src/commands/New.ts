@@ -23,9 +23,9 @@ export default class extends Command<RoleClient>
 		if (!(<TextChannel> message.channel).permissionsFor(message.author).has('SEND_MESSAGES'))
 			return message.author.send(`I can't create messages in that channel.`);
 
-		if (this.client.roleManager.controllerExists(message.guild, category))
+		if (this.client.controllerManager.controllerExists(message.guild, category))
 		{
-			const controller: RoleController = this.client.roleManager.getController(message.guild, category);
+			const controller: RoleController = this.client.controllerManager.getController(message.guild, category);
 			const output: string = controller.channel.id !== message.channel.id
 				? `**A role controller for that category already exists in ${controller.channel}.**`
 				: `**A role controller for that category already exists.**`;
@@ -33,6 +33,6 @@ export default class extends Command<RoleClient>
 			return message.channel.send(output).then((m: Message) => m.delete(10e3));
 		}
 
-		await this.client.roleManager.create(<TextChannel> message.channel, category);
+		await this.client.controllerManager.create(<TextChannel> message.channel, category);
 	}
 }

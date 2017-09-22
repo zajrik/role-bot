@@ -20,11 +20,11 @@ export default class extends Command<RoleClient>
 	public async action(message: Message, [category]: [string]): Promise<any>
 	{
 		await message.delete();
-		const controller: RoleController = this.client.roleManager.getController(message.guild, category);
+		const controller: RoleController = this.client.controllerManager.getController(message.guild, category);
 		if (!controller) return message.channel
 			.send('**Failed to find a role controller for that category.**')
 			.then((m: Message) => m.delete(10e3));
 
-		await this.client.roleManager.sync(controller);
+		await this.client.controllerManager.sync(controller);
 	}
 }
