@@ -1,7 +1,8 @@
-import { Collection, Guild, Message, MessageReaction, RichEmbed, Role, TextChannel, User } from 'discord.js';
-import { KeyedStorage, ListenerUtil, Logger, logger } from 'yamdbf';
-import { RoleController } from './RoleController';
+/* eslint-disable no-await-in-loop */
+import { Collection, Guild, Message, MessageReaction, MessageEmbed, Role, TextChannel, User } from 'discord.js';
+import { SingleProviderStorage, ListenerUtil, Logger, logger } from '@yamdbf/core';
 import { RoleClient } from './RoleClient';
+import { RoleController } from './RoleController';
 import { Util } from './Util';
 const { on, registerListeners } = ListenerUtil;
 
@@ -11,19 +12,20 @@ const { on, registerListeners } = ListenerUtil;
 export class RoleControllerManager
 {
 	@logger('RoleControllerManager')
-	private readonly logger: Logger;
-	private client: RoleClient;
-	private storage: KeyedStorage;
+	private readonly _logger: Logger;
+
+	private _client: RoleClient;
+	private _storage: SingleProviderStorage;
 
 	/** Maps TextChannel IDs to Collections of <MessageID, RoleController> */
-	private controllers: Collection<string, Collection<string, RoleController>>;
+	private _controllers: Collection<string, Collection<string, RoleController>>;
 
 	public constructor(client: RoleClient)
 	{
-		this.client = client;
-		this.storage = new KeyedStorage('role_controllers', this.client.provider);
-		this.controllers = new Collection<string, Collection<string, RoleController>>();
-		registerListeners(this.client, this);
+		this._client = client;
+		this._storage = new SingleProviderStorage('role_controllers', this._client.provider);
+		this._controllers = new Collection<string, Collection<string, RoleController>>();
+		registerListeners(this._client, this);
 	}
 
 	/**
@@ -31,30 +33,40 @@ export class RoleControllerManager
 	 */
 	public async init(): Promise<void>
 	{
-		await this.storage.init();
-		for (const guildID of await this.storage.keys())
-			for (const channelID of Object.keys(await this.storage.get(guildID)))
+		await this._storage.init();
+
+		for (const guildID of await this._storage.keys())
+		{
+			for (const channelID of Object.keys(await this._storage.get(guildID)))
 			{
-				this.controllers.set(channelID, new Collection<string, RoleController>());
-				for (const messageID of Object.keys(await this.storage.get(`${guildID}.${channelID}`)))
+				this._controllers.set(channelID, new Collection<string, RoleController>());
+
+				for (const messageID of Object.keys(await this._storage.get(`${guildID}.${channelID}`)))
 				{
-					const channel: TextChannel = <TextChannel> this.client.channels.get(channelID);
-					const category: string =  await this.storage.get(`${guildID}.${channelID}.${messageID}`);
+					const channel: TextChannel = this._client.channels.cache.get(channelID) as TextChannel;
+					const category: string = await this._storage.get(`${guildID}.${channelID}.${messageID}`);
 
 					let message: Message;
-					try { message = await channel.fetchMessage(messageID); }
+
+					try
+					{
+						message = await channel.messages.fetch(messageID);
+					}
 					catch
 					{
-						await this.storage.remove(`${guildID}.${channelID}.${messageID}`);
+						await this._storage.remove(`${guildID}.${channelID}.${messageID}`);
 						continue;
 					}
 
-					this.controllers.get(channelID).set(message.id,
-						new RoleController(this.client, channel, message, category));
+					this._controllers.get(channelID).set(
+						message.id,
+						new RoleController(this._client, channel, message, category)
+					);
 				}
 			}
+		}
 
-		this.logger.log('Initialized.');
+		this._logger.log('Initialized.');
 	}
 
 	/**
@@ -65,9 +77,12 @@ export class RoleControllerManager
 	{
 		const channel: string = reaction.message.channel.id;
 		const message: string = reaction.message.id;
-		if (this.controllers.has(channel))
-			if (this.controllers.get(channel).has(message))
-				this.controllers.get(channel).get(message).handle(reaction, user);
+		if (this._controllers.has(channel))
+			if (this._controllers.get(channel).has(message))
+				this._controllers
+					.get(channel)
+					.get(message)
+					.handle(reaction, user);
 	}
 
 	/**
@@ -82,7 +97,8 @@ export class RoleControllerManager
 		let needsUpdate: boolean = false;
 		if (typeof secondaryRole === 'string')
 		{
-			if (categoryRegex.test(role.name)) needsUpdate = true;
+			if (categoryRegex.test(role.name))
+				needsUpdate = true;
 		}
 		else if (secondaryRole instanceof Role)
 		{
@@ -90,7 +106,9 @@ export class RoleControllerManager
 				&& (categoryRegex.test(role.name) || categoryRegex.test(secondaryRole.name)))
 				needsUpdate = true;
 		}
-		if (!needsUpdate) return;
+
+		if (!needsUpdate)
+			return;
 
 		const category: string =
 			(typeof secondaryRole === 'string' ? role : secondaryRole).name.match(categoryRegex)[1];
@@ -107,11 +125,13 @@ export class RoleControllerManager
 	private async _onMessageDelete(message: Message): Promise<void>
 	{
 		const controllerPath: string = `${message.guild.id}.${message.channel.id}.${message.id}`;
-		if (await this.storage.exists(controllerPath))
+
+		if (await this._storage.exists(controllerPath))
 		{
-			await this.storage.remove(controllerPath);
-			if (this.controllers.has(message.channel.id))
-				this.controllers.get(message.channel.id).delete(message.id);
+			await this._storage.remove(controllerPath);
+
+			if (this._controllers.has(message.channel.id))
+				this._controllers.get(message.channel.id).delete(message.id);
 		}
 	}
 
@@ -121,11 +141,11 @@ export class RoleControllerManager
 	public getController(guild: Guild, category: string): RoleController
 	{
 		let fetchedController: RoleController;
-		for (const channel of (guild.channels.filter(c => c.type === 'text').values()))
+		for (const channel of guild.channels.cache.filter(c => c.type === 'text').values())
 		{
-			if (this.controllers.has(channel.id))
+			if (this._controllers.has(channel.id))
 			{
-				for (const controller of this.controllers.get(channel.id).values())
+				for (const controller of this._controllers.get(channel.id).values())
 					if (controller.category === category)
 					{
 						fetchedController = controller;
@@ -151,14 +171,14 @@ export class RoleControllerManager
 	public getCategoryRoles(guild: Guild, category: string): Collection<string, Role>
 	{
 		const categoryRegex: RegExp = new RegExp(`^${category}:`);
-		return guild.roles.filter(role => categoryRegex.test(role.name));
+		return guild.roles.cache.filter(role => categoryRegex.test(role.name));
 	}
 
 	/**
 	 * Create an embed for the category to serve as the visual representation
 	 * of the controller within the given TextChannel
 	 */
-	public createControllerEmbed(channel: TextChannel, category: string): RichEmbed
+	public createControllerEmbed(channel: TextChannel, category: string): MessageEmbed
 	{
 		let desc: string = [
 			'Choose a role number to be assigned that role.\n',
@@ -166,7 +186,7 @@ export class RoleControllerManager
 			'and may only change roles once every 10 minutes.\n\n```ldif\n'
 		].join('\n');
 
-		const embed: RichEmbed = new RichEmbed()
+		const embed: MessageEmbed = new MessageEmbed()
 			.setTitle(`Category: ${category}`);
 
 		const roles: Collection<string, Role> = this.getCategoryRoles(channel.guild, category);
@@ -186,26 +206,31 @@ export class RoleControllerManager
 	public async create(channel: TextChannel, category: string): Promise<RoleController>
 	{
 		// Create a controller collection for the channel if it doesn't exist
-		if (!this.controllers.has(channel.id))
-			this.controllers.set(channel.id, new Collection<string, RoleController>());
+		if (!this._controllers.has(channel.id))
+			this._controllers.set(channel.id, new Collection<string, RoleController>());
 
-		if (this.controllerExists(channel.guild, category)) return this.getController(channel.guild, category);
+		if (this.controllerExists(channel.guild, category))
+			return this.getController(channel.guild, category);
 
 		let count: number = 0;
-		const embed: RichEmbed = this.createControllerEmbed(channel, category);
-		const message: Message = <Message> await channel.send({ embed });
-		const roles: Collection<string, Role> = this.getCategoryRoles(channel.guild, category)
-			.filter(role => count++ <= 9);
+		const embed: MessageEmbed = this.createControllerEmbed(channel, category);
+		const message: Message = await channel.send({ embed });
 
-		if (roles.size === 0) return null;
+		// Lmao why did I do this? Should have taken an array from the collection and sliced it
+		const roles: Collection<string, Role> = this.getCategoryRoles(channel.guild, category)
+			.filter(() => count++ <= 9);
+
+		if (roles.size === 0)
+			return null;
+
 		for (let i: number = 0; i < roles.size; i++)
 			await message.react(Util.numberEmoji[i + 1]);
 
 		await message.react('❌');
 
-		await this.storage.set(`${channel.guild.id}.${channel.id}.${message.id}`, category);
-		const controller: RoleController = new RoleController(this.client, channel, message, category);
-		this.controllers.get(channel.id).set(message.id, controller);
+		await this._storage.set(`${channel.guild.id}.${channel.id}.${message.id}`, category);
+		const controller: RoleController = new RoleController(this._client, channel, message, category);
+		this._controllers.get(channel.id).set(message.id, controller);
 		return controller;
 	}
 
@@ -216,14 +241,19 @@ export class RoleControllerManager
 	public async sync(controller: RoleController): Promise<void>
 	{
 		const { category, message } = controller;
-		const embed: RichEmbed = this.createControllerEmbed(<TextChannel> message.channel, category);
-		await message.clearReactions();
+		const embed: MessageEmbed = this.createControllerEmbed(message.channel as TextChannel, category);
+
+		await message.reactions.removeAll();
+
 		let count: number = 0;
 		const roles: Collection<string, Role> = this.getCategoryRoles(message.guild, category)
-			.filter(role => count++ <= 9);
+			.filter(() => count++ <= 9);
 
-		if (roles.size === 0) embed.setDescription('This category has had all of its roles removed.');
-		const editedMessage: Message = <Message> await message.edit({ embed });
+		if (roles.size === 0)
+			embed.setDescription('This category has had all of its roles removed.');
+
+		const editedMessage: Message = await message.edit({ embed });
+
 		for (let i: number = 0; i < roles.size; i++)
 			await editedMessage.react(Util.numberEmoji[i + 1]);
 

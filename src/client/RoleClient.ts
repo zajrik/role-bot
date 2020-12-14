@@ -1,6 +1,7 @@
-import { Client, ListenerUtil, LogLevel, Util } from 'yamdbf';
-import { RoleControllerManager } from './RoleControllerManager';
+/* eslint-disable @typescript-eslint/camelcase */
+import { Client, ListenerUtil, LogLevel, Util } from '@yamdbf/core';
 import { TextChannel, Message, User, MessageReaction } from 'discord.js';
+import { RoleControllerManager } from './RoleControllerManager';
 const { token, owner } = require('../config.json');
 const { once, on } = ListenerUtil;
 
@@ -11,12 +12,12 @@ export class RoleClient extends Client
 	public constructor()
 	{
 		super({
-			token: token,
-			owner: owner,
+			token,
+			owner,
 			commandsDir: './bin/commands',
 			unknownCommandError: false,
 			disableBase: Util.baseCommandNames
-			.filter(name => name !== 'eval'),
+				.filter(name => name !== 'eval'),
 			pause: true,
 			logLevel: LogLevel.DEBUG,
 			readyText: 'Ready.\u0007'
@@ -39,33 +40,37 @@ export class RoleClient extends Client
 	}
 
 	@on('raw')
-	private async _onRaw({t, d}: {t: string, d: any}): Promise<void>
+	private async _onRaw({ t, d }: {t: string, d: any}): Promise<void>
 	{
-		if (t !== 'MESSAGE_REACTION_ADD') return;
+		if (t !== 'MESSAGE_REACTION_ADD')
+			return;
 
-		type ReactionAddData = {
+		interface ReactionAddData
+		{
 			channel_id: string;
 			message_id: string;
 			user_id: string;
-			emoji: { name: string; id?: string }
-		};
+			emoji: { name: string, id?: string };
+		}
 
 		const { channel_id, message_id, user_id, emoji }: ReactionAddData = d;
-		const channel: TextChannel = <TextChannel> this.channels.get(channel_id);
-		const message: Message = await channel.fetchMessage(message_id);
-		const user: User = await this.fetchUser(user_id);
+		const channel: TextChannel = await this.channels.fetch(channel_id) as TextChannel;
+		const message: Message = await channel.messages.fetch(message_id);
+		const user: User = await this.users.fetch(user_id);
 
 		const emojiID: string = emoji.id ? `${emoji.name}:${emoji.id}` : emoji.name;
 		const me: boolean = user_id === this.user.id;
 
-		let reaction: MessageReaction =
-			message.reactions.get(emojiID) || new MessageReaction(message, emoji, 0, me);
+		const reaction: MessageReaction =
+			message.reactions.cache.get(emojiID) || new MessageReaction(this, { me, emoji }, message);
 
-		message.reactions.set(emojiID, reaction);
-		if (!reaction.me) reaction.me = me;
+		message.reactions.cache.set(emojiID, reaction);
 
-		reaction.count = reaction.count + (reaction.users.has(user.id) ? 0 : 1);
-		reaction.users.set(user.id, user);
+		if (!reaction.me)
+			reaction.me = me;
+
+		reaction.count += reaction.users.cache.has(user.id) ? 0 : 1;
+		reaction.users.cache.set(user.id, user);
 
 		this.emit('reaction', reaction, user);
 	}

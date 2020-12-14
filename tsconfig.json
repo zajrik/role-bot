@@ -12,7 +12,8 @@
         "experimentalDecorators": true,
 		"typeRoots": [
 			"node_modules/yamdbf/node_modules/discord.js/typings"
-		]
+		],
+        "skipLibCheck": true
     },
 	"exclude": [
 		"node_modules",

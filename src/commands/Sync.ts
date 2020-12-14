@@ -1,7 +1,7 @@
+import { Command, CommandDecorators, Middleware } from '@yamdbf/core';
+import { Message } from 'discord.js';
 import { RoleClient } from '../client/RoleClient';
 import { RoleController } from '../client/RoleController';
-import { Message } from 'discord.js';
-import { Command, CommandDecorators, Middleware } from 'yamdbf';
 const { using } = CommandDecorators;
 
 export default class extends Command<RoleClient>
@@ -21,9 +21,11 @@ export default class extends Command<RoleClient>
 	{
 		await message.delete();
 		const controller: RoleController = this.client.controllerManager.getController(message.guild, category);
-		if (!controller) return message.channel
-			.send('**Failed to find a role controller for that category.**')
-			.then((m: Message) => m.delete(10e3));
+
+		if (!controller)
+			return message.channel
+				.send('**Failed to find a role controller for that category.**')
+				.then(async (m: Message) => m.delete({ timeout: 10e3 }));
 
 		await this.client.controllerManager.sync(controller);
 	}

@@ -11,7 +11,7 @@
 			"program": "${workspaceRoot}/bin/bot.js",
 			"cwd": "${workspaceRoot}",
 			"outFiles": [],
-			"preLaunchTask": "default",
+			"preLaunchTask": "build:vscode",
 			"console": "integratedTerminal"
 		},
 		{
